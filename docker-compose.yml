@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  pretix:
+    build: .
+    image: pretix-fork
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - PRETIX_CONFIG_FILE=/etc/pretix/pretix.cfg
+    volumes:
+      - ./etc:/etc/pretix
+      - ./data:/data
+    depends_on:
+      - db
+      - redis
+
+  pretix-cron:
+    build: .
+    image: pretix-fork
+    restart: unless-stopped
+    command: cron
+    environment:
+      - PRETIX_CONFIG_FILE=/etc/pretix/pretix.cfg
+    volumes:
+      - ./etc:/etc/pretix
+      - ./data:/data
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pretix
+      POSTGRES_USER: pretix
+      POSTGRES_PASSWORD: pretix
+    volumes:
+      - ./db:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    volumes:
+      - ./redis:/data

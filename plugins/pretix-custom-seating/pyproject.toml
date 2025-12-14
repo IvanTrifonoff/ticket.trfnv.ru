@@ -1,0 +1,9 @@
+[project]
+name = "pretix-custom-seating"
+version = "1.0.0"
+description = "Custom seating initialization for Pretix"
+authors = [{name = "IT Department", email = "admin@trfnv.ru"}]
+dependencies = ["pretix"]
+
+[project.entry-points."pretix.plugin"]
+pretix_custom_seating = "pretix_custom_seating:PretixCustomSeatingApp"
