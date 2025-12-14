@@ -1,0 +1,27 @@
+#custom-seating-plan {
+    border: 1px solid #ccc;
+    margin: 10px 0;
+    overflow: auto;
+    text-align: center;
+}
+
+#custom-seating-plan h3 {
+    margin: 10px;
+}
+
+#seating-debug {
+    color: blue;
+    text-align: left;
+    margin: 10px;
+    border: 1px solid #eee;
+    padding: 5px;
+}
+
+#seating-svg {
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+}
+
+.seat-circle {
+    cursor: pointer;
+}

@@ -7,6 +7,51 @@
         console.log(msg);
     }
 
+    function addToCart(seat) {
+        log("Attempting to add seat " + seat.seat_number + " to cart...");
+        if (!seat.item_id || !seat.seat_guid) {
+            log("Error: Seat missing item_id (" + seat.item_id + ") or seat_guid (" + seat.seat_guid + ")");
+            alert("Error: Invalid seat configuration.");
+            return;
+        }
+
+        var csrfTokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (!csrfTokenInput) {
+            log("Error: CSRF token not found");
+            alert("Error: CSRF token missing.");
+            return;
+        }
+        var csrfToken = csrfTokenInput.value;
+
+        var formData = new FormData();
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        // Correct parameter for adding a seated item in Pretix
+        formData.append('seat_' + seat.item_id, seat.seat_guid); 
+        
+        var cartUrl = window.location.pathname.replace(/\/$/, "") + '/cart/add';
+        
+        log("Posting to: " + cartUrl);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', cartUrl, true);
+        
+        xhr.onload = function () {
+            log("Response status: " + xhr.status);
+            if (xhr.status >= 200 && xhr.status < 400) {
+                log("Success. Reloading...");
+                window.location.reload(); 
+            } else {
+                log("Error adding to cart. Status: " + xhr.status);
+                alert("Failed to add to cart.");
+            }
+        };
+        xhr.onerror = function () {
+            log("Network Error");
+            alert("Network error.");
+        };
+        xhr.send(formData);
+    }
+
     try {
         var rawDataElement = document.getElementById('seating-data');
         if (!rawDataElement) {
@@ -18,7 +63,7 @@
         var svg = document.getElementById('seating-svg');
         var ns = "http://www.w3.org/2000/svg";
         
-        log("JS Loaded. Data parsed. Size: " + (data.size ? data.size.width + 'x' + data.size.height : 'N/A'));
+        log("JS Loaded. Data parsed.");
 
         if (data.size) {
             svg.setAttribute('width', data.size.width);
@@ -33,22 +78,18 @@
             });
         }
 
-        var seatsCount = 0;
-
         if (data.zones) {
-            log("Zones: " + data.zones.length);
-            data.zones.forEach(function(zone, zIndex) {
+            data.zones.forEach(function(zone) {
                 var zX = zone.position ? zone.position.x : 0;
                 var zY = zone.position ? zone.position.y : 0;
                 
                 if (zone.rows) {
-                    zone.rows.forEach(function(row, rIndex) {
+                    zone.rows.forEach(function(row) {
                         var rX = row.position ? row.position.x : 0;
                         var rY = row.position ? row.position.y : 0;
                         
                         if (row.seats) {
-                            row.seats.forEach(function(seat, sIndex) {
-                                seatsCount++;
+                            row.seats.forEach(function(seat) {
                                 var circle = document.createElementNS(ns, "circle");
                                 
                                 var sX = (seat.position ? seat.position.x : (seat.x || 0));
@@ -57,7 +98,6 @@
                                 var x = zX + rX + sX;
                                 var y = zY + rY + sY;
                                 
-                                // Center adjustment
                                 var cx = x + 15;
                                 var cy = y + 15;
 
@@ -69,14 +109,15 @@
                                 circle.setAttribute("fill", color);
                                 circle.setAttribute("stroke", "#333");
                                 circle.setAttribute("stroke-width", "1");
-                                circle.setAttribute("style", "cursor: pointer;");
+                                // Use class instead of inline style
+                                circle.setAttribute("class", "seat-circle");
                                 
                                 var title = document.createElementNS(ns, "title");
                                 title.textContent = "Seat " + seat.seat_number;
                                 circle.appendChild(title);
 
                                 circle.addEventListener("click", function() {
-                                    alert("Seat " + seat.seat_number);
+                                    addToCart(seat);
                                 });
 
                                 svg.appendChild(circle);
@@ -96,8 +137,6 @@
                 }
             });
         }
-        
-        log("Total drawn seats: " + seatsCount);
 
     } catch (e) {
         log("ERROR: " + e.message);
